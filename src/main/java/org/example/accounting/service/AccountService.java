@@ -2,10 +2,13 @@ package org.example.accounting.service;
 
 
 import org.example.accounting.Repository.AccountRepository;
+import org.example.accounting.enums.AccountHeadingType;
 import org.example.accounting.models.Account;
 import org.example.accounting.models.AccountHeading;
+import org.example.accounting.models.DocumentItem;
 import org.example.base.BaseService;
 import org.example.utils.CodeGenerator;
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.ws.rs.BadRequestException;
@@ -102,4 +105,40 @@ public class AccountService implements BaseService<Account> {
         validatePostOrThrowException(account);
     }
 
+    private boolean hasRemaining(Account account, BigDecimal amount) {
+
+        AccountHeadingType accountHeadingType = account.getAccountHeading().getType();
+        boolean hasRemaining = true;
+        if(
+                (accountHeadingType.equals(AccountHeadingType.CREDITOR_ACCOUNT)
+                        && amount.compareTo(BigDecimal.ZERO) < 0
+                )
+                        ||
+                        (accountHeadingType.equals(AccountHeadingType.DEBTOR_ACCOUNT)
+                                && amount.compareTo(BigDecimal.ZERO) > 0
+                        )
+        ){
+
+           hasRemaining =  account.getRemainingAmount().compareTo(amount) > 0;
+
+        }
+
+        return hasRemaining;
+
+    }
+
+    public Session transferMoney(List<DocumentItem> documentItems) {
+            documentItems.stream().forEach(documentItem -> {
+                Account account = this.accountRepository.findById(documentItem.getAccount().getId());
+                if(account == null) {
+                    throw new NotFoundException("Account with id:["+documentItem.getAccount().getId()+"] dose not exist");
+                }
+                if(!hasRemaining(account, documentItem.getAmount())){
+                    throw  new BadRequestException("account with id:["+account.getId()+"] has not Enough remaining ");
+                }
+
+                // TODO
+
+            });
+    }
 }
