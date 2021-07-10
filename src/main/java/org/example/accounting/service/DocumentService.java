@@ -43,11 +43,11 @@ public class DocumentService {
 
     private void generateDocumentNumber(Document document){
         boolean codeNotValid = true;
-        long documentNumber=0;
+        String documentNumber="-1";
         List<Document> documents;
         CodeGenerator codeGenerator = new CodeGenerator();
         while (codeNotValid){
-            documentNumber = codeGenerator.generateCode(12);
+            documentNumber = codeGenerator.generateBigCode(12);
             documents = this.documentRepository.findByDocumentNumber(documentNumber);
             if (documents.isEmpty()) {
                 codeNotValid = false;

@@ -100,4 +100,8 @@ public class Account {
     }
 
 
+    @Override
+    public boolean equals(Object o) {
+        return this.id ==  ( (Account) o).getId();
+    }
 }

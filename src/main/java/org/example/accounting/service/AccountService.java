@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService implements BaseService<Account> {
@@ -128,17 +132,39 @@ public class AccountService implements BaseService<Account> {
     }
 
     public Session transferMoney(List<DocumentItem> documentItems) {
-            documentItems.stream().forEach(documentItem -> {
-                Account account = this.accountRepository.findById(documentItem.getAccount().getId());
-                if(account == null) {
-                    throw new NotFoundException("Account with id:["+documentItem.getAccount().getId()+"] dose not exist");
+        Vector<Account> accounts = new Vector<>();
+        documentItems.stream().forEach(documentItem -> {
+            Account account;
+            int index = accounts.indexOf(documentItem.getAccount());
+            if( index != -1){
+                account = accounts.get(index);
+            }else {
+                account = AccountService.this.accountRepository.findById(documentItem.getAccount().getId());
+                if (account == null) {
+                    throw new NotFoundException("Account with id:[" + documentItem.getAccount().getId() + "] dose not exist");
                 }
-                if(!hasRemaining(account, documentItem.getAmount())){
-                    throw  new BadRequestException("account with id:["+account.getId()+"] has not Enough remaining ");
-                }
+                accounts.add(account);
+            }
+            
+            AccountHeadingType accountHeadingType = account.getAccountHeading().getType();
+            BigDecimal documentItemAmount = documentItem.getAmount();
 
-                // TODO
+            if (!hasRemaining(account, documentItemAmount)) {
+                throw new BadRequestException("account with id:[" + account.getId() + "] has not Enough remaining ");
+            }
 
-            });
+            BigDecimal newAmount;
+
+            if (accountHeadingType.equals(AccountHeadingType.CREDITOR_ACCOUNT)) {
+                newAmount = account.getRemainingAmount().add(documentItemAmount);
+            } else if (accountHeadingType.equals(AccountHeadingType.DEBTOR_ACCOUNT)) {
+                newAmount = account.getRemainingAmount().add(documentItemAmount.negate());
+            }else {
+                throw new BadRequestException("accountHeading is not valid for accountId:["+account.getId()+"]");
+            }
+            account.setRemainingAmount(newAmount);
+        });
+        return this.accountRepository.transferMoney(accounts);
+
     }
 }

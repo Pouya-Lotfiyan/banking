@@ -22,8 +22,8 @@ public class DocumentRepository {
     }
 
 
-    public List<Document> findByDocumentNumber(long documentNumber) {
-        ArrayList<Document> documents = new ArrayList<>();
+    public List<Document> findByDocumentNumber(String documentNumber) {
+        List<Document> documents = new ArrayList<>();
         Session session = sessionFactory.openSession();
         try {
             documents = (ArrayList<Document>) session.createQuery("from Document d where d.documentNumber = :documentNumber")
@@ -45,11 +45,14 @@ public class DocumentRepository {
                 long id = (long) transferMoneySession.save(document);
                 transferMoneySession.getTransaction().commit();
                 document.setId(id);
+                transferMoneySession.close();
                 return document;
             }catch (Exception e){
                 transferMoneySession.getTransaction().rollback();
                 transferMoneySession.close();
                 throw new BadRequestException("something went wrong.");
+            }finally {
+                System.out.println("finally document save");
             }
     }
 }

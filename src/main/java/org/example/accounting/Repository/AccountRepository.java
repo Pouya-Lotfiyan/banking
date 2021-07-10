@@ -7,6 +7,8 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.springframework.stereotype.Repository;
+
+import javax.ws.rs.BadRequestException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,5 +115,21 @@ public class AccountRepository implements BaseRepository<Account> {
             session.close();
         }
         return accounts;
+    }
+
+    public Session transferMoney(List<Account> accounts) {
+
+        Session session = sessionFactory.openSession();
+            Transaction tx = null;
+            try {
+                tx = session.beginTransaction();
+                accounts.stream().forEach(session::merge);
+            }catch (Exception e){
+                if(tx != null ) tx.rollback();
+                session.close();
+                throw  new BadRequestException("something went wrong");
+            }
+
+        return session;
     }
 }

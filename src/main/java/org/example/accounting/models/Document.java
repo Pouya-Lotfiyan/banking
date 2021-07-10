@@ -37,6 +37,10 @@ public class Document {
         return branchCode;
     }
 
+    public Document() {
+        this.enable = true;
+    }
+
     public void setBranchCode(String branchCode) {
         this.branchCode = branchCode;
     }

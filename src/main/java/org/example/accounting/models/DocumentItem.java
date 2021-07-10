@@ -26,6 +26,10 @@ public class DocumentItem {
     @Column(name = "c_amount")
     private BigDecimal amount;
 
+    public DocumentItem() {
+        this.enable = true;
+    }
+
     public Document getDocument() {
         return document;
     }
